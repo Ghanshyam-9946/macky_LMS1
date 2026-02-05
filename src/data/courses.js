@@ -1,0 +1,26 @@
+export const courses = [
+  {
+    id: 301,
+    title: "Full Stack Web Development",
+    instructorId: 101,
+    price: "₹6,999",
+    faculty: "Amit Sharma",
+    videos: ["HTML", "CSS", "JS", "React", "Node"],
+    assignments: ["Portfolio Website", "REST API"],
+    projects: ["E-commerce App"],
+    technology: ["HTML", "CSS", "JS", "React"],
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+  },
+  {
+    id: 302,
+    title: "React Mastery",
+    instructorId: 106,
+    price: "₹4,999",
+    faculty: "Kiran Joshi",
+    videos: ["JSX", "Hooks", "Context"],
+    assignments: ["React Dashboard"],
+    projects: ["React LMS"],
+    technology: ["React"],
+    image: "https://images.unsplash.com/photo-1555099962-4199c345e5dd",
+  },
+];
