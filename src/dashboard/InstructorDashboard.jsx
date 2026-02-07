@@ -1,9 +1,13 @@
-import { useState } from "react";
+import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLMS } from "../context/LMSContext";
 import { courses } from "../data/courses";
 import { students } from "../data/users";
 import DashboardLayout from "../dashboard/DashboardLayout";
+
+// Updated Button Style
+const btn =
+  "px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md flex items-center gap-2";
 
 const InstructorDashboard = () => {
   const { user } = useAuth();
@@ -15,186 +19,171 @@ const InstructorDashboard = () => {
     approveFinalProject,
   } = useLMS();
 
-  const [activeTab, setActiveTab] = useState("courses");
-
   const myEnrollments = enrollments.filter(
     (e) => e.instructorId === user.id
   );
 
   return (
-    <DashboardLayout onNavSelect={setActiveTab}>
-      <div className="space-y-8">
-        <h1 className="text-2xl text-white font-semibold">
-          Instructor Dashboard
-        </h1>
+    <DashboardLayout>
+      <div className="space-y-8 pb-10">
+        <h1 className="text-3xl font-bold text-white mb-6">Instructor Review Dashboard</h1>
 
-        {myEnrollments.map((enroll, idx) => {
-          const course = courses.find(c => c.id === enroll.courseId);
-          const student = students.find(s => s.id === enroll.studentId);
+        {myEnrollments.length === 0 && (
+           <div className="text-center py-20 bg-gray-900/30 rounded-3xl border border-dashed border-gray-700">
+             <p className="text-gray-400">No active enrollments to review.</p>
+           </div>
+        )}
+
+        {myEnrollments.map((enroll) => {
+          const course = courses.find((c) => c.id === enroll.courseId);
+          const student = students.find((s) => s.id === enroll.studentId);
           if (!course || !student) return null;
 
           return (
             <div
-              key={idx}
-              className="bg-[#121212] border border-white/10 rounded-xl p-6"
+              key={`${enroll.studentId}-${enroll.courseId}`}
+              className="bg-[#1e293b]/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden"
             >
-              {/* HEADER */}
-              <div className="mb-6">
-                <h2 className="text-lg text-white">{course.title}</h2>
-                <p className="text-white/60 text-sm">
-                  Student: {student.name}
-                </p>
-                <p className="text-yellow-400 text-sm mt-1">
-                  ⭐ Points: {enroll.totalPoints}
-                </p>
+              {/* Decorative Glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] -z-10" />
+
+              <div className="border-b border-white/10 pb-4 mb-4 flex justify-between items-start">
+                <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">
+                    {course.title}
+                    </h2>
+                    <p className="text-gray-400 text-sm flex items-center gap-2">
+                    <span className="bg-white/10 px-2 py-0.5 rounded text-gray-300">Student: {student.name}</span>
+                    </p>
+                </div>
+                <div className="text-right">
+                    <span className="text-yellow-400 font-bold text-xl block">{enroll.totalPoints}</span>
+                    <span className="text-xs text-gray-500 uppercase">Total Points</span>
+                </div>
               </div>
 
-              {/* ================= PER VIDEO REVIEW ================= */}
-              {activeTab === "courses" &&
-                course.videos.map((video, index) => {
+              {/* === VIDEO MODULES REVIEW === */}
+              <div className="space-y-3 mb-6">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Module Submissions</h3>
+                {course.videos.map((video, index) => {
                   const prog = enroll.videoProgress[index];
-                  const a = prog.assignment;
-                  const p = prog.miniProject;
+                  // Check if action is needed
+                  const needsAction = (prog.assignment.submitted && !prog.assignment.approved) || (prog.miniProject.submitted && !prog.miniProject.approved);
 
                   return (
                     <div
                       key={video.id}
-                      className="bg-black/40 border border-white/10 rounded p-4 mb-4"
+                      className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${
+                          needsAction 
+                          ? "bg-blue-900/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]" 
+                          : "bg-gray-900/40 border-white/5"
+                      }`}
                     >
-                      <h4 className="text-white mb-2">
-                        {video.title}
-                      </h4>
+                      <div className="flex items-center gap-3">
+                          <span className={`text-sm font-mono ${needsAction ? "text-blue-400" : "text-gray-600"}`}>#{index + 1}</span>
+                          <p className="text-gray-200 font-medium">{video.title}</p>
+                      </div>
 
-                      <p className={prog.videoCompleted ? "text-green-400" : "text-yellow-400"}>
-                        🎥 Video: {prog.videoCompleted ? "Watched" : "Pending"}
-                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {/* Assignment Status */}
+                        {prog.assignment.submitted && !prog.assignment.approved ? (
+                          <button
+                            onClick={() => approveAssignment(enroll.studentId, enroll.courseId, index)}
+                            className={`${btn} bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20`}
+                          >
+                            📝 Approve Assignment
+                          </button>
+                        ) : prog.assignment.approved ? (
+                            <span className="text-xs px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full border border-emerald-500/20 flex items-center">
+                                ✓ Assignment Done
+                            </span>
+                        ) : (
+                            <span className="text-xs px-3 py-1 text-gray-600 italic">No Assignment</span>
+                        )}
 
-                      {/* ASSIGNMENT */}
-                      {a.submitted && !a.approved && (
-                        <button
-                          onClick={() =>
-                            approveAssignment(enroll.studentId, course.id, index)
-                          }
-                          className="text-emerald-400 text-sm"
-                        >
-                          Approve Assignment
-                        </button>
-                      )}
-
-                      {!a.submitted && (
-                        <p className="text-yellow-400 text-sm">
-                          📝 Assignment: Not Submitted
-                        </p>
-                      )}
-
-                      {a.approved && (
-                        <p className="text-green-400 text-sm">
-                          📝 Assignment: Approved
-                        </p>
-                      )}
-
-                      {/* MINI PROJECT */}
-                      {p.submitted && !p.approved && (
-                        <button
-                          onClick={() =>
-                            approveMiniProject(enroll.studentId, course.id, index)
-                          }
-                          className="text-purple-400 text-sm"
-                        >
-                          Approve Mini Project
-                        </button>
-                      )}
-
-                      {!p.submitted && (
-                        <p className="text-yellow-400 text-sm">
-                          🛠 Mini Project: Not Submitted
-                        </p>
-                      )}
-
-                      {p.approved && (
-                        <p className="text-green-400 text-sm">
-                          🛠 Mini Project: Approved
-                        </p>
-                      )}
+                        {/* Mini Project Status */}
+                        {prog.miniProject.submitted && !prog.miniProject.approved ? (
+                          <button
+                            onClick={() => approveMiniProject(enroll.studentId, enroll.courseId, index)}
+                            className={`${btn} bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20`}
+                          >
+                            💻 Approve Project
+                          </button>
+                        ) : prog.miniProject.approved ? (
+                            <span className="text-xs px-3 py-1 bg-purple-500/10 text-purple-500 rounded-full border border-purple-500/20 flex items-center">
+                                ✓ Project Done
+                            </span>
+                        ) : (
+                            <span className="text-xs px-3 py-1 text-gray-600 italic">No Project</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
+              </div>
 
-              {/* ================= FINAL ASSIGNMENT ================= */}
-              {activeTab === "assignments" && (
-                <div className="border border-emerald-400/40 p-4 rounded">
-                  <h3 className="text-emerald-400 mb-2">
-                    ⭐ Final Assignment
-                  </h3>
-
-                  {!enroll.finalAssignment.submitted && (
-                    <p className="text-yellow-400">
-                      Student has not submitted yet
-                    </p>
-                  )}
-
-                  {enroll.finalAssignment.submitted &&
-                    !enroll.finalAssignment.approved && (
-                      <>
-                        <p className="text-yellow-400 mb-2">
-                          Submitted — Waiting for approval
-                        </p>
-                        <button
-                          onClick={() =>
-                            approveFinalAssignment(enroll.studentId, course.id)
-                          }
-                          className="text-emerald-400"
-                        >
-                          Approve Final Assignment
-                        </button>
-                      </>
+              {/* === FINAL ASSESSMENTS REVIEW (Always Visible now) === */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                
+                {/* Final Assignment Card */}
+                <div className={`p-5 rounded-xl border flex flex-col justify-between h-full ${
+                    enroll.finalAssignment.submitted && !enroll.finalAssignment.approved
+                    ? "bg-blue-900/10 border-blue-500/30"
+                    : "bg-gray-900/30 border-white/5"
+                }`}>
+                    <div>
+                        <h4 className="text-blue-400 font-bold mb-1">Final Assignment</h4>
+                        <p className="text-xs text-gray-500 mb-4">Written Assessment</p>
+                    </div>
+                    
+                    {enroll.finalAssignment.submitted && !enroll.finalAssignment.approved ? (
+                         <button
+                            onClick={() => approveFinalAssignment(enroll.studentId, enroll.courseId)}
+                            className={`${btn} w-full justify-center bg-blue-600 hover:bg-blue-500 text-white`}
+                         >
+                           📄 Approve Submission
+                         </button>
+                    ) : enroll.finalAssignment.approved ? (
+                        <div className="text-center py-2 bg-green-500/10 text-green-400 rounded-lg border border-green-500/20 text-sm font-bold">
+                            ✓ Approved
+                        </div>
+                    ) : (
+                        <div className="text-center py-2 bg-white/5 text-gray-500 rounded-lg text-sm italic">
+                            Waiting for Student...
+                        </div>
                     )}
-
-                  {enroll.finalAssignment.approved && (
-                    <p className="text-green-400">
-                      ✔ Final Assignment Approved
-                    </p>
-                  )}
                 </div>
-              )}
 
-              {/* ================= FINAL PROJECT ================= */}
-              {activeTab === "projects" && (
-                <div className="border border-yellow-400/40 p-4 rounded">
-                  <h3 className="text-yellow-400 mb-2">
-                    ⭐ Final Project
-                  </h3>
+                {/* Final Project Card */}
+                <div className={`p-5 rounded-xl border flex flex-col justify-between h-full ${
+                    enroll.finalProject.submitted && !enroll.finalProject.approved
+                    ? "bg-orange-900/10 border-orange-500/30"
+                    : "bg-gray-900/30 border-white/5"
+                }`}>
+                    <div>
+                        <h4 className="text-orange-400 font-bold mb-1">Capstone Project</h4>
+                        <p className="text-xs text-gray-500 mb-4">Final Practical Exam</p>
+                    </div>
 
-                  {!enroll.finalProject.submitted && (
-                    <p className="text-yellow-400">
-                      Student has not submitted yet
-                    </p>
-                  )}
-
-                  {enroll.finalProject.submitted &&
-                    !enroll.finalProject.approved && (
-                      <>
-                        <p className="text-yellow-400 mb-2">
-                          Submitted — Waiting for approval
-                        </p>
-                        <button
-                          onClick={() =>
-                            approveFinalProject(enroll.studentId, course.id)
-                          }
-                          className="text-yellow-400"
-                        >
-                          Approve Final Project
-                        </button>
-                      </>
+                    {enroll.finalProject.submitted && !enroll.finalProject.approved ? (
+                         <button
+                            onClick={() => approveFinalProject(enroll.studentId, enroll.courseId)}
+                            className={`${btn} w-full justify-center bg-orange-600 hover:bg-orange-500 text-white`}
+                         >
+                           🎓 Approve Capstone
+                         </button>
+                    ) : enroll.finalProject.approved ? (
+                        <div className="text-center py-2 bg-green-500/10 text-green-400 rounded-lg border border-green-500/20 text-sm font-bold">
+                            ✓ Approved
+                        </div>
+                    ) : (
+                        <div className="text-center py-2 bg-white/5 text-gray-500 rounded-lg text-sm italic">
+                            Waiting for Student...
+                        </div>
                     )}
-
-                  {enroll.finalProject.approved && (
-                    <p className="text-green-400">
-                      ✔ Final Project Approved
-                    </p>
-                  )}
                 </div>
-              )}
+
+              </div>
             </div>
           );
         })}
