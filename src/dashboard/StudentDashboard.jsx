@@ -1,123 +1,287 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLMS } from "../context/LMSContext";
+import { courses } from "../data/courses";
+import DashboardLayout from "../dashboard/DashboardLayout";
 
 const StudentDashboard = () => {
   const { user } = useAuth();
   const {
-    courses,
     enrollments,
     completeVideo,
-    completeAssignment,
-    completeProject,
+    submitAssignment,
+    submitMiniProject,
+    submitFinalAssignment,
+    submitFinalProject,
   } = useLMS();
 
-  const studentId = user.id;
+  const [activeTab, setActiveTab] = useState("courses");
+  const [activeVideo, setActiveVideo] = useState(null);
+
   const myEnrollments = enrollments.filter(
-    e => e.studentId === studentId
+    (e) => e.studentId === user.id
   );
 
   return (
-    <div className="min-h-screen bg-[#0b1020] text-gray-200 p-10">
-      <h1 className="text-3xl font-semibold mb-8">
-        Student Dashboard
-      </h1>
+    <DashboardLayout onNavSelect={setActiveTab}>
+      <div className="space-y-8">
+        {myEnrollments.map((enroll) => {
+          const course = courses.find(
+            (c) => c.id === enroll.courseId
+          );
+          if (!course) return null;
 
-      {myEnrollments.map(e => {
-        const course = courses.find(c => c.id === e.courseId);
+          return (
+            <div
+              key={course.id}
+              className="bg-[#121212] border border-white/10 rounded-xl p-6"
+            >
+              <h2 className="text-xl text-white mb-6">
+                {course.title} — ⭐ {enroll.totalPoints}
+              </h2>
 
-        return (
-          <div
-            key={course.id}
-            className="bg-white/5 border border-white/10 rounded-xl p-6 mb-8"
-          >
-            <h2 className="text-2xl mb-4">
-              {course.title}
-            </h2>
+              {/* ================= COURSES (VIDEOS LIST ALWAYS VISIBLE) ================= */}
+              {activeTab === "courses" &&
+                course.videos.map((video, index) => {
+                  const prog = enroll.videoProgress[index];
 
-            {/* VIDEOS */}
-            <h3 className="font-semibold mb-2">
-              Videos
-            </h3>
+                  return (
+                    <div
+                      key={video.id}
+                      className="bg-black/40 p-4 rounded mb-4"
+                    >
+                      {/* VIDEO PREVIEW */}
+                      <div
+                        onClick={() => setActiveVideo(video)}
+                        className="cursor-pointer mb-3"
+                      >
+                        <iframe
+                          src={video.url}
+                          title={video.title}
+                          className="w-full h-56 rounded pointer-events-none"
+                        />
+                      </div>
 
-            {e.videos.map((v, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center mb-2"
-              >
-                <span>
-                  {v.title}
-                </span>
+                      {/* TITLE + ACTION */}
+                      <div className="flex justify-between items-center">
+                        <p className="text-white/80">
+                          {video.title}
+                        </p>
 
-                {v.completed ? (
-                  <span className="text-green-400">
-                    Completed (+10 pts)
-                  </span>
-                ) : (
-                  <button
-                    onClick={() =>
-                      completeVideo(
-                        studentId,
-                        course.id,
-                        i
-                      )
-                    }
-                    className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded"
-                  >
-                    Submit Video
-                  </button>
-                )}
-              </div>
-            ))}
+                        <button
+                          onClick={() =>
+                            completeVideo(
+                              user.id,
+                              course.id,
+                              index
+                            )
+                          }
+                          disabled={prog.videoCompleted}
+                          className="text-blue-400 text-sm"
+                        >
+                          {prog.videoCompleted
+                            ? "✔ Watched"
+                            : "Mark Watched"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
 
-            <p className="mt-3 text-yellow-400">
-              Total Points: {e.totalPoints}
-            </p>
+              {/* ================= ASSIGNMENTS ================= */}
+              {activeTab === "assignments" && (
+                <div className="space-y-4">
+                  {course.videos.map((video, index) => {
+                    const a =
+                      enroll.videoProgress[index].assignment;
 
-            {/* ASSIGNMENT */}
-            <div className="mt-5">
-              {!e.assignmentCompleted ? (
-                <button
-                  onClick={() =>
-                    completeAssignment(
-                      studentId,
-                      course.id
-                    )
-                  }
-                  className="px-4 py-2 bg-green-500/20 text-green-400 rounded"
-                >
-                  Submit Assignment
-                </button>
-              ) : (
-                <p className="text-green-400">
-                  Assignment Completed
-                </p>
+                    return (
+                      <div
+                        key={video.id}
+                        className="bg-black/40 p-4 rounded"
+                      >
+                        <h4 className="text-white mb-1">
+                          Assignment – {video.title}
+                        </h4>
+                        <p className="text-white/60 text-sm mb-2">
+                          {video.assignment}
+                        </p>
+
+                        {!a.submitted && (
+                          <button
+                            onClick={() =>
+                              submitAssignment(
+                                user.id,
+                                course.id,
+                                index
+                              )
+                            }
+                            className="text-emerald-400 text-sm"
+                          >
+                            Submit Assignment
+                          </button>
+                        )}
+
+                        {a.submitted && !a.approved && (
+                          <span className="text-yellow-400 text-sm">
+                            ⏳ Pending Review
+                          </span>
+                        )}
+
+                        {a.approved && (
+                          <span className="text-green-400 text-sm">
+                            ✔ Approved
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* FINAL ASSIGNMENT */}
+                  <div className="border border-emerald-400/40 p-4 rounded">
+                    <h3 className="text-emerald-400 mb-2">
+                      ⭐ Final Assignment
+                    </h3>
+
+                    {!enroll.finalAssignment.submitted && (
+                      <button
+                        onClick={() =>
+                          submitFinalAssignment(
+                            user.id,
+                            course.id
+                          )
+                        }
+                        className="text-emerald-400"
+                      >
+                        Submit Final Assignment
+                      </button>
+                    )}
+
+                    {enroll.finalAssignment.submitted &&
+                      !enroll.finalAssignment.approved && (
+                        <span className="text-yellow-400">
+                          ⏳ Pending Review
+                        </span>
+                      )}
+
+                    {enroll.finalAssignment.approved && (
+                      <span className="text-green-400">
+                        ✔ Approved
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ================= PROJECTS ================= */}
+              {activeTab === "projects" && (
+                <div className="space-y-4">
+                  {course.videos.map((video, index) => {
+                    const p =
+                      enroll.videoProgress[index].miniProject;
+
+                    return (
+                      <div
+                        key={video.id}
+                        className="bg-black/40 p-4 rounded"
+                      >
+                        <h4 className="text-white mb-1">
+                          Mini Project – {video.title}
+                        </h4>
+                        <p className="text-white/60 text-sm mb-2">
+                          {video.miniProject}
+                        </p>
+
+                        {!p.submitted && (
+                          <button
+                            onClick={() =>
+                              submitMiniProject(
+                                user.id,
+                                course.id,
+                                index
+                              )
+                            }
+                            className="text-purple-400 text-sm"
+                          >
+                            Submit Project
+                          </button>
+                        )}
+
+                        {p.submitted && !p.approved && (
+                          <span className="text-yellow-400 text-sm">
+                            ⏳ Pending Review
+                          </span>
+                        )}
+
+                        {p.approved && (
+                          <span className="text-green-400 text-sm">
+                            ✔ Approved
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* FINAL PROJECT */}
+                  <div className="border border-yellow-400/40 p-4 rounded">
+                    <h3 className="text-yellow-400 mb-2">
+                      ⭐ Final Project
+                    </h3>
+
+                    {!enroll.finalProject.submitted && (
+                      <button
+                        onClick={() =>
+                          submitFinalProject(
+                            user.id,
+                            course.id
+                          )
+                        }
+                        className="text-yellow-400"
+                      >
+                        Submit Final Project
+                      </button>
+                    )}
+
+                    {enroll.finalProject.submitted &&
+                      !enroll.finalProject.approved && (
+                        <span className="text-yellow-400">
+                          ⏳ Pending Review
+                        </span>
+                      )}
+
+                    {enroll.finalProject.approved && (
+                      <span className="text-green-400">
+                        ✔ Approved
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            {/* PROJECT */}
-            <div className="mt-3">
-              {!e.projectCompleted ? (
-                <button
-                  onClick={() =>
-                    completeProject(
-                      studentId,
-                      course.id
-                    )
-                  }
-                  className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded"
-                >
-                  Complete Project
-                </button>
-              ) : (
-                <p className="text-purple-400">
-                  Project Completed
-                </p>
-              )}
-            </div>
+      {/* ================= VIDEO MODAL (80% SCREEN) ================= */}
+      {activeVideo && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <div className="relative w-[80%] h-[80%] bg-black rounded-lg">
+            <button
+              onClick={() => setActiveVideo(null)}
+              className="absolute -top-10 right-0 text-white text-2xl"
+            >
+              ✕
+            </button>
+
+            <iframe
+              src={activeVideo.url}
+              className="w-full h-full rounded"
+              allowFullScreen
+            />
           </div>
-        );
-      })}
-    </div>
+        </div>
+      )}
+    </DashboardLayout>
   );
 };
 

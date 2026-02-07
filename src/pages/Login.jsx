@@ -22,38 +22,46 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-[#0F172A] flex">
 
-      {/* LEFT – HERO / BRANDING */}
-      <div className="hidden lg:flex w-1/2 flex-col justify-center px-16 bg-gradient-to-br from-[#0F172A] via-[#020617] to-[#020617]">
-        <h1 className="text-4xl font-bold text-white leading-tight mb-6">
-          Learn Smarter.<br />
-          Build Your Future.
-        </h1>
+      {/* ================= LEFT – HERO / BRANDING ================= */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden">
 
-        <p className="text-white/70 max-w-md mb-10">
-          Access premium courses, expert instructors, structured learning paths
-          and track your progress — all in one place.
-        </p>
+        {/* TECH IMAGE */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{
+            backgroundImage:
+              "url(https://images.unsplash.com/photo-1518770660439-4636190af475)",
+          }}
+        />
 
-        <div className="flex gap-8">
-          <div>
-            <p className="text-2xl font-semibold text-white">8+</p>
-            <p className="text-sm text-white/50">Courses</p>
-          </div>
-          <div>
-            <p className="text-2xl font-semibold text-white">6+</p>
-            <p className="text-sm text-white/50">Instructors</p>
-          </div>
-          <div>
-            <p className="text-2xl font-semibold text-white">100%</p>
-            <p className="text-sm text-white/50">Skill-Focused</p>
+        {/* DARK OVERLAY */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#020617]/95 to-black" />
+
+        {/* CONTENT */}
+        <div className="relative z-10 flex flex-col justify-center px-16">
+          <h1 className="text-5xl font-bold tracking-wide mb-6">
+            <span className="text-red-500">MACKY</span>
+            <span className="text-white"> LMS</span>
+          </h1>
+
+          <p className="text-white/70 text-lg max-w-md leading-relaxed">
+            A modern learning platform to manage courses,
+            assignments, projects and real-time progress —
+            all in one place.
+          </p>
+
+          <div className="mt-10 flex gap-6 text-sm text-white/60">
+            <span>• Secure Login</span>
+            <span>• Role Based Access</span>
+            <span>• Real-time Tracking</span>
           </div>
         </div>
       </div>
 
-      {/* RIGHT – LOGIN CARD */}
+      {/* ================= RIGHT – LOGIN CARD ================= */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#020617] relative">
 
-        {/* subtle glow */}
+        {/* subtle glow (same as before) */}
         <div className="absolute -top-40 right-0 w-[400px] h-[400px] bg-blue-500/10 blur-[140px]" />
 
         <form

@@ -1,87 +1,143 @@
 import { createContext, useContext, useState } from "react";
 import { courses } from "../data/courses";
-import { students, instructors } from "../data/users";
 
-const LMSContext = createContext();
+const LMSContext = createContext(null);
 
 export const LMSProvider = ({ children }) => {
   const [enrollments, setEnrollments] = useState([]);
 
-  // ADMIN → Assign course
+  /* ================= ASSIGN COURSE ================= */
   const assignCourse = (studentId, courseId) => {
-    const already = enrollments.find(
-      e => e.studentId === studentId && e.courseId === courseId
+    const exists = enrollments.some(
+      (e) => e.studentId === studentId && e.courseId === courseId
     );
-    if (already) return false;
+    if (exists) return false;
 
-    const course = courses.find(c => c.id === courseId);
+    const course = courses.find((c) => c.id === courseId);
 
-    setEnrollments(prev => [
-      ...prev,
-      {
-        studentId,
-        courseId,
-        instructorId: course.instructorId,
+    const newEnrollment = {
+      studentId,
+      courseId,
+      instructorId: course.instructorId,
 
-        // VIDEO STATUS
-        videos: course.videos.map(v => ({
-          title: v,
-          completed: false,
-          points: 0,
-        })),
+      videoProgress: course.videos.map(() => ({
+        videoCompleted: false,
+        assignment: { submitted: false, approved: false },
+        miniProject: { submitted: false, approved: false },
+      })),
 
-        assignmentCompleted: false,
-        projectCompleted: false,
-        totalPoints: 0,
-      },
-    ]);
+      finalAssignment: { submitted: false, approved: false },
+      finalProject: { submitted: false, approved: false },
 
+      totalPoints: 0,
+    };
+
+    setEnrollments((p) => [...p, newEnrollment]);
     return true;
   };
 
-  // STUDENT → Complete Video
-  const completeVideo = (studentId, courseId, videoIndex) => {
-    setEnrollments(prev =>
-      prev.map(e => {
-        if (
-          e.studentId === studentId &&
-          e.courseId === courseId
-        ) {
-          if (e.videos[videoIndex].completed) return e;
-
-          const updatedVideos = [...e.videos];
-          updatedVideos[videoIndex] = {
-            ...updatedVideos[videoIndex],
-            completed: true,
-            points: 10,
-          };
-
-          return {
-            ...e,
-            videos: updatedVideos,
-            totalPoints: e.totalPoints + 10,
-          };
+  /* ================= STUDENT ACTIONS ================= */
+  const completeVideo = (studentId, courseId, index) => {
+    setEnrollments((prev) =>
+      prev.map((e) => {
+        if (e.studentId === studentId && e.courseId === courseId) {
+          const vp = [...e.videoProgress];
+          vp[index].videoCompleted = true;
+          return { ...e, videoProgress: vp };
         }
         return e;
       })
     );
   };
 
-  const completeAssignment = (studentId, courseId) => {
-    setEnrollments(prev =>
-      prev.map(e =>
+  const submitAssignment = (studentId, courseId, index) => {
+    updateNested(studentId, courseId, index, "assignment", "submitted");
+  };
+
+  const submitMiniProject = (studentId, courseId, index) => {
+    updateNested(studentId, courseId, index, "miniProject", "submitted");
+  };
+
+  const submitFinalAssignment = (studentId, courseId) => {
+    updateFinal(studentId, courseId, "finalAssignment", "submitted");
+  };
+
+  const submitFinalProject = (studentId, courseId) => {
+    updateFinal(studentId, courseId, "finalProject", "submitted");
+  };
+
+  /* ================= INSTRUCTOR ACTIONS ================= */
+  const approveAssignment = (studentId, courseId, index) => {
+    approveNested(studentId, courseId, index, "assignment", 20);
+  };
+  
+  const approveMiniProject = (studentId, courseId, index) => {
+    approveNested(studentId, courseId, index, "miniProject", 30);
+  };
+  
+  const approveFinalAssignment = (studentId, courseId) => {
+    approveFinal(studentId, courseId, "finalAssignment", 50);
+  };
+  
+  const approveFinalProject = (studentId, courseId) => {
+    approveFinal(studentId, courseId, "finalProject", 100);
+  };
+  
+
+  /* ================= HELPERS ================= */
+  const updateNested = (studentId, courseId, index, field, key) => {
+    setEnrollments((prev) =>
+      prev.map((e) => {
+        if (e.studentId === studentId && e.courseId === courseId) {
+          const vp = [...e.videoProgress];
+          vp[index][field][key] = true;
+          return { ...e, videoProgress: vp };
+        }
+        return e;
+      })
+    );
+  };
+
+  const approveNested = (studentId, courseId, index, field, points) => {
+    setEnrollments((prev) =>
+      prev.map((e) => {
+        if (e.studentId === studentId && e.courseId === courseId) {
+          const vp = [...e.videoProgress];
+          if (!vp[index][field].approved) {
+            vp[index][field].approved = true;
+            return {
+              ...e,
+              videoProgress: vp,
+              totalPoints: e.totalPoints + points,
+            };
+          }
+        }
+        return e;
+      })
+    );
+  };
+
+  const updateFinal = (studentId, courseId, field, key) => {
+    setEnrollments((prev) =>
+      prev.map((e) =>
         e.studentId === studentId && e.courseId === courseId
-          ? { ...e, assignmentCompleted: true }
+          ? { ...e, [field]: { ...e[field], [key]: true } }
           : e
       )
     );
   };
 
-  const completeProject = (studentId, courseId) => {
-    setEnrollments(prev =>
-      prev.map(e =>
-        e.studentId === studentId && e.courseId === courseId
-          ? { ...e, projectCompleted: true }
+  const approveFinal = (studentId, courseId, field, points) => {
+    setEnrollments((prev) =>
+      prev.map((e) =>
+        e.studentId === studentId &&
+        e.courseId === courseId &&
+        !e[field].approved
+          ? {
+              ...e,
+              [field]: { ...e[field], approved: true },
+              totalPoints: e.totalPoints + points,
+            }
           : e
       )
     );
@@ -90,14 +146,19 @@ export const LMSProvider = ({ children }) => {
   return (
     <LMSContext.Provider
       value={{
-        courses,
-        students,
-        instructors,
         enrollments,
         assignCourse,
+
         completeVideo,
-        completeAssignment,
-        completeProject,
+        submitAssignment,
+        submitMiniProject,
+        submitFinalAssignment,
+        submitFinalProject,
+
+        approveAssignment,
+        approveMiniProject,
+        approveFinalAssignment,
+        approveFinalProject,
       }}
     >
       {children}
@@ -105,4 +166,8 @@ export const LMSProvider = ({ children }) => {
   );
 };
 
-export const useLMS = () => useContext(LMSContext);
+export const useLMS = () => {
+  const ctx = useContext(LMSContext);
+  if (!ctx) throw new Error("useLMS must be used inside LMSProvider");
+  return ctx;
+};

@@ -1,26 +1,66 @@
 export const courses = [
   {
-    id: 301,
-    title: "Full Stack Web Development",
+    id: 1,
+    title: "Web Development",
     instructorId: 101,
-    price: "₹6,999",
-    faculty: "Amit Sharma",
-    videos: ["HTML", "CSS", "JS", "React", "Node"],
-    assignments: ["Portfolio Website", "REST API"],
-    projects: ["E-commerce App"],
-    technology: ["HTML", "CSS", "JS", "React"],
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+
+    videos: [
+      {
+        id: 1,
+        title: "HTML Basics",
+        url: "https://www.youtube.com/embed/qz0aGYrrlhU",
+        assignment: "Create a basic HTML page using headings, lists and images",
+        miniProject: "Build a simple personal profile page"
+      },
+      {
+        id: 2,
+        title: "CSS Fundamentals",
+        url: "https://www.youtube.com/embed/yfoY53QXEnI",
+        assignment: "Design a Flexbox layout",
+        miniProject: "Create a responsive landing section"
+      },
+      {
+        id: 3,
+        title: "JavaScript Introduction",
+        url: "https://www.youtube.com/embed/W6NZfCO5SIk",
+        assignment: "Write a JS calculator",
+        miniProject: "Build a todo list using JS"
+      },
+    ],
+
+    finalProject: {
+      title: "Full Responsive Website",
+      description:
+        "Build a complete responsive website using HTML, CSS and JavaScript"
+    },
   },
+
   {
-    id: 302,
-    title: "React Mastery",
+    id: 2,
+    title: "React Fundamentals",
     instructorId: 106,
-    price: "₹4,999",
-    faculty: "Kiran Joshi",
-    videos: ["JSX", "Hooks", "Context"],
-    assignments: ["React Dashboard"],
-    projects: ["React LMS"],
-    technology: ["React"],
-    image: "https://images.unsplash.com/photo-1555099962-4199c345e5dd",
+
+    videos: [
+      {
+        id: 1,
+        title: "React Introduction",
+        url: "https://www.youtube.com/embed/bMknfKXIFA8",
+        assignment: "Setup React project using Vite",
+        miniProject: "Create Hello World component"
+      },
+      {
+        id: 2,
+        title: "Props & State",
+        url: "https://www.youtube.com/embed/35lXWvCuM8o",
+        assignment: "Pass props between components",
+        miniProject: "Counter app using useState"
+      },
+    ],
+
+    finalProject: {
+      title: "React Dashboard App",
+      description:
+        "Build a small dashboard using React hooks and components"
+    },
   },
 ];
